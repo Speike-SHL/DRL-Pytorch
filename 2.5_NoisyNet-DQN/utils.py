@@ -22,7 +22,10 @@ def evaluate_policy(env, agent, turns=3):
 
 
 class NoisyLinear(nn.Module):
-    """From https://github.com/Lizhi-sjtu/DRL-code-pytorch/blob/main/3.Rainbow_DQN/network.py"""
+    """
+    解析见 2.2_Noisy-Duel-DDQN-Atari/utils.py 中的 NoisyLinear
+    From https://github.com/Lizhi-sjtu/DRL-code-pytorch/blob/main/3.Rainbow_DQN/network.py
+    """
 
     def __init__(self, in_features, out_features, sigma_init=0.5):
         super(NoisyLinear, self).__init__()

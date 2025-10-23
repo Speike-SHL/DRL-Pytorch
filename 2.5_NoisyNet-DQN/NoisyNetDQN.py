@@ -52,6 +52,7 @@ class NoisyNetDQN_agent(object):
 
         """Compute the target Q value"""
         with torch.no_grad():
+            # 没有用 Dueling 和 Double
             max_q_next = self.q_target(s_next).max(1)[0].unsqueeze(1)
             target_Q = r + (~dw) * self.gamma * max_q_next  # dw: die or win
 
@@ -64,19 +65,19 @@ class NoisyNetDQN_agent(object):
         q_loss.backward()
         self.q_net_optimizer.step()
 
-        # Update the frozen target models
+        # 软更新目标网络参数
         for param, target_param in zip(self.q_net.parameters(), self.q_target.parameters()):
             target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
     def save(self, algo, EnvName, steps):
-        torch.save(self.q_net.state_dict(), "./model/{}_{}_{}k.pth".format(algo, EnvName, steps))
+        torch.save(self.q_net.state_dict(), "./2.5_NoisyNet-DQN/model/{}_{}_{}k.pth".format(algo, EnvName, steps))
 
     def load(self, algo, EnvName, steps):
         self.q_net.load_state_dict(
-            torch.load("./model/{}_{}_{}k.pth".format(algo, EnvName, steps), map_location=self.dvc)
+            torch.load("./2.5_NoisyNet-DQN/model/{}_{}_{}k.pth".format(algo, EnvName, steps), map_location=self.dvc)
         )
         self.q_target.load_state_dict(
-            torch.load("./model/{}_{}_{}k.pth".format(algo, EnvName, steps), map_location=self.dvc)
+            torch.load("./2.5_NoisyNet-DQN/model/{}_{}_{}k.pth".format(algo, EnvName, steps), map_location=self.dvc)
         )
 
 

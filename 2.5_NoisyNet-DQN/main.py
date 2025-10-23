@@ -73,14 +73,16 @@ def main():
 
         timenow = str(datetime.now())[0:-10]
         timenow = " " + timenow[0:13] + "_" + timenow[-2::]
-        writepath = "runs/{}-{}_S{}_".format(algo_name, BriefEnvName[opt.EnvIdex], opt.seed) + timenow
+        writepath = (
+            "./2.5_NoisyNet-DQN/runs/{}-{}_S{}_".format(algo_name, BriefEnvName[opt.EnvIdex], opt.seed) + timenow
+        )
         if os.path.exists(writepath):
             shutil.rmtree(writepath)
         writer = SummaryWriter(log_dir=writepath)
 
     # Build model and replay buffer
-    if not os.path.exists("model"):
-        os.mkdir("model")
+    if not os.path.exists("./2.5_NoisyNet-DQN/model"):
+        os.mkdir("./2.5_NoisyNet-DQN/model")
     agent = NoisyNetDQN_agent(**vars(opt))
     if opt.Loadmodel:
         agent.load(algo_name, BriefEnvName[opt.EnvIdex], opt.ModelIdex)
@@ -110,7 +112,7 @@ def main():
                 s = s_next
 
                 """Update"""
-                # train 50 times every 50 steps rather than 1 training per step. Better!
+                # NOTE 这里也选择了每 50 步更新 50 次的方法, 而不是每步都更新。不同于2.2_Duel_DDQN-Atari/main.py
                 if total_steps >= opt.random_steps and total_steps % opt.update_every == 0:
                     for j in range(opt.update_every):
                         agent.train()
