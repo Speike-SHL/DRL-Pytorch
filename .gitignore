@@ -1,6 +1,6 @@
 .vscode
 __pycache__
-# model
-# runs
+model
+runs
 video
 *.mp4

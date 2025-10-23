@@ -90,6 +90,7 @@ class DQN_agent(object):
         with torch.no_grad():
             # 转换维度, 因为输入网络正向传播时, 要求输入为 [batch_size, state_dim]
             state = torch.FloatTensor(state.reshape(1, -1)).to(self.dvc)
+            # NOTE: 在测试时也可以选择最低概率的小探索, 用来测试策略是否稳健
             if deterministic:
                 a = self.q_net(state).argmax().item()
             else:
@@ -170,5 +171,8 @@ class ReplayBuffer(object):
         self.size = min(self.size + 1, self.max_size)
 
     def sample(self, batch_size):
+        # 抽样可能重复
+        # replayerbuffer 的目的主要是打破数据的相关性, 同样一条数据本来就会被使用多次
+        # 因此当 buffer 大小远大于 batch_size 时, 抽样时允许重复采样
         ind = torch.randint(0, self.size, device=self.dvc, size=(batch_size,))
         return self.s[ind], self.a[ind], self.r[ind], self.s_next[ind], self.dw[ind]

@@ -5,29 +5,30 @@ import gymnasium as gym
 import numpy as np
 import torch
 import cv2
+import ale_py
+
+"""
+类似于 gymnasium 中的包装器, 用于逐层包装 Atari 环境, 实现更多的功能
+"""
+
 
 def make_env_tianshou(
-    env_name,
-    noop_reset=True,
-    episode_life=True,
-    clip_rewards=True,
-    frame_stack=4,
-    warp_frame=True,
-    render_mode=None
+    env_name, noop_reset=True, episode_life=True, clip_rewards=True, frame_stack=4, warp_frame=True, render_mode=None
 ):
-    """Configure environment for DeepMind-style Atari.
-    Support both Gymnasium(s,r,term,trunc,info) and Gym(s,r,done,info)  API
-    The observation is (4, 84, 84); torch.uint8; <class 'torch.Tensor'>
-    # Here we do not normalize the observation to float in (0,1). Instead, we use uint8 to save memory.
+    """按照 DeepMind 风格配置 Atari 环境。
+    同时支持 Gymnasium (s,r,term,trunc,info) 与 Gym (s,r,done,info) 两种 API。
+    观测形状为 (4, 84, 84)，数据类型为 torch.uint8，返回类型为 <class 'torch.Tensor'>。
+    # 此处不对观测做 (0,1) 浮点归一化，而是使用 uint8 以节省内存。
     """
-    assert 'NoFrameskip' in env_name
+    assert "NoFrameskip" in env_name
+    gym.register_envs(ale_py)
     env = gym.make(env_name, render_mode=render_mode)
     if noop_reset:
         env = NoopResetEnv(env, noop_max=30)
     env = MaxAndSkipEnv(env, skip=4)
     if episode_life:
         env = EpisodicLifeEnv(env)
-    if 'FIRE' in env.unwrapped.get_action_meanings():
+    if "FIRE" in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     if warp_frame:
         env = WarpFrame(env)
@@ -37,23 +38,19 @@ def make_env_tianshou(
         env = FrameStack(env, frame_stack)
     return env
 
+
 def _parse_reset_result(reset_result):
-    contains_info = (
-        isinstance(reset_result, tuple)
-        and len(reset_result) == 2
-        and isinstance(reset_result[1], dict)
-    )
+    contains_info = isinstance(reset_result, tuple) and len(reset_result) == 2 and isinstance(reset_result[1], dict)
     if contains_info:
         return reset_result[0], reset_result[1], contains_info
     return reset_result, {}, contains_info
 
+
 class NoopResetEnv(gym.Wrapper):
-    """Sample initial states by taking random number of no-ops on reset.
-
-    No-op is assumed to be action 0.
-
-    :param gym.Env env: the environment to wrap.
-    :param int noop_max: the maximum value of no-ops to run.
+    """在 reset 时通过执行随机数量的 no-op 来采样初始状态。用于增加初始状态的多样性
+    假设 no-op 动作为 0。
+    :param gym.Env env: 要包装的环境。
+    :param int noop_max: 运行的最大 no-op 数量。
     """
 
     def __init__(self, env, noop_max=30) -> None:
@@ -83,10 +80,10 @@ class NoopResetEnv(gym.Wrapper):
 
 
 class MaxAndSkipEnv(gym.Wrapper):
-    """Return only every `skip`-th frame (frameskipping) using most recent raw observations (for max pooling across time steps).
-
-    :param gym.Env env: the environment to wrap.
-    :param int skip: number of `skip`-th frame.
+    """仅返回每 `skip` 帧中的最新原始观测（用于在时序上做最大池化）。
+    可以减少计算量，提高训练效率
+    :param gym.Env env: 要包装的环境。
+    :param int skip: 跳帧的数量。
     """
 
     def __init__(self, env, skip=4) -> None:
@@ -120,11 +117,9 @@ class MaxAndSkipEnv(gym.Wrapper):
 
 
 class EpisodicLifeEnv(gym.Wrapper):
-    """Make end-of-life == end-of-episode, but only reset on true game over.
-
-    It helps the value estimation.
-
-    :param gym.Env env: the environment to wrap.
+    """将“失去生命”视为回合结束，但只在真正的游戏结束时(生命耗尽时)才重置环境。
+    这有助于价值函数的估计。
+    :param gym.Env env: 要包装的环境。
     """
 
     def __init__(self, env) -> None:
@@ -177,11 +172,9 @@ class EpisodicLifeEnv(gym.Wrapper):
 
 
 class FireResetEnv(gym.Wrapper):
-    """Take action on reset for environments that are fixed until firing.
-
-    Related discussion: https://github.com/openai/baselines/issues/240.
-
-    :param gym.Env env: the environment to wrap.
+    """在 reset 时主动执行“开火”动作，用于那些需要开火才能开始游戏的环境。
+    相关讨论：https://github.com/openai/baselines/issues/240。
+    :param gym.Env env: 要包装的环境。
     """
 
     def __init__(self, env) -> None:
@@ -196,9 +189,9 @@ class FireResetEnv(gym.Wrapper):
 
 
 class WarpFrame(gym.ObservationWrapper):
-    """Warp frames to 84x84 as done in the Nature paper and later work.
-
-    :param gym.Env env: the environment to wrap.
+    """将帧缩放到 84×84，正如 Nature 论文及后续工作中所采用的方式。
+    大幅减少输入维度、提高训练效率
+    :param gym.Env env: 要包装的环境。
     """
 
     def __init__(self, env) -> None:
@@ -218,9 +211,9 @@ class WarpFrame(gym.ObservationWrapper):
 
 
 class ClipRewardEnv(gym.RewardWrapper):
-    """clips the reward to {+1, 0, -1} by its sign.
-
-    :param gym.Env env: the environment to wrap.
+    """将奖励通过其符号裁剪为 {+1, 0, -1}。
+    用于稳定训练过程
+    :param gym.Env env: 要包装的环境。
     """
 
     def __init__(self, env) -> None:
@@ -233,10 +226,10 @@ class ClipRewardEnv(gym.RewardWrapper):
 
 
 class FrameStack(gym.Wrapper):
-    """Stack n_frames last frames.
-
-    :param gym.Env env: the environment to wrap.
-    :param int n_frames: the number of frames to stack.
+    """堆叠最近 n_frames 帧。
+    目的：让智能体能够感知物体的运动信息
+    :param gym.Env env: 要包装的环境。
+    :param int n_frames: 要堆叠的帧数。
     """
 
     def __init__(self, env, n_frames) -> None:
@@ -271,9 +264,6 @@ class FrameStack(gym.Wrapper):
         return self._get_ob(), reward, done, info
 
     def _get_ob(self):
-        '''Note that here is different from original Tianshou Wrapper'''
+        """Note that here is different from original Tianshou Wrapper"""
         # the original wrapper use `LazyFrames` but since we use np buffer, it has no effect
-        return torch.tensor(np.stack(self.frames, axis=0), dtype=torch.uint8) #return torch.tensor instead of numpy
-
-
-
+        return torch.tensor(np.stack(self.frames, axis=0), dtype=torch.uint8)  # return torch.tensor instead of numpy

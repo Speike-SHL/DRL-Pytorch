@@ -126,7 +126,7 @@ def main():
             env_seed += 1  # 每个episode的seed不同，避免overfit
             done = False
 
-            """Interact & trian, 每回合"""
+            """Interact & train, 每回合"""
             while not done:
                 # e-greedy exploration
                 if total_steps < opt.random_steps:  # random_steps 前纯探索
