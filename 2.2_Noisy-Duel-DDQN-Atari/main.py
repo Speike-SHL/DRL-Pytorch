@@ -20,7 +20,7 @@ parser.add_argument("--device", type=str, default="cuda", help="running device o
 parser.add_argument("--write", type=str2bool, default=True, help="Use SummaryWriter to record the training")
 parser.add_argument("--render", type=str2bool, default=False, help="Render or Not")
 parser.add_argument("--Loadmodel", type=str2bool, default=False, help="Load pretrained model or Not")
-parser.add_argument("--ModelIdex", type=int, default=900, help="which model to load")
+parser.add_argument("--ModelIdex", type=int, default=1000, help="which model to load")
 
 parser.add_argument("--Max_train_steps", type=int, default=int(1e6), help="Max training steps")
 parser.add_argument("--save_interval", type=int, default=int(1e5), help="Model saving interval, in steps.")
@@ -42,7 +42,7 @@ parser.add_argument("--final_e", type=float, default=0.02, help="Final e-greedy 
 parser.add_argument(
     "--noop_reset",
     type=str2bool,
-    default=False,
+    default=True,
     help="use NoopResetEnv or not, about noop reset, see tianshou_wrappers.py",
 )
 parser.add_argument("--huber_loss", type=str2bool, default=True, help="True: use huber_loss; False:use mse_loss")
